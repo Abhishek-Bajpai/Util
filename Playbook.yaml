@@ -1,0 +1,59 @@
+---
+- hosts: win
+  tasks:
+  - name: Copy Tomcat9 zip File
+    win_copy:
+      src: \\dc1ecm16dsinta.icwgrp.com\e$\OPENTEXT\Patches-Downloads\apache-tomcat-9.0.46-windows-x64.zip
+      dest: E:\opentext\tomcat9
+      remote_src: yes
+  -name: Copy webapps from old Tomcat 8.5  to Tomcat 9
+      win_copy:
+      src: \\dc1ecm16leainta.icwgrp.com\e$\opentext\tomcat8.5\webapps
+      dest: \\dc1ecm16dsinta.icwgrp.com\e$\OPENTEXT\Tomcat9\webapps
+      remote_src: yes
+   - name: Stop Tomcat 8.5
+     win_service:
+       name: Tomcat8
+       state: stopped
+   - name:  Uninsta Tomcat8 Service
+     script: 
+    
+   - name: Add Tomcat9 as service
+     script: \\dc1ecm16dsinta.icwgrp.com\e$\OPENTEXT\Tomcat9\bin\service.bat install  
+
+    - name: Set Tomcat9 service startup mode to auto and ensure it is started
+      ansible.windows.win_service:
+        name: Tomcat9
+        start_mode: auto
+        state: started
+    
+    - name: Modifying jvm registry
+      win_regedit:
+        path: HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Apache Software Foundation\Procrun 2.0\Tomcat9\Parameters\Java
+        name: Jvm
+        data: E:\OpenText\Java\openjdk\bin\server\jvm.dll
+    
+    - name: Modifying JvmMs registry
+      win_regedit:
+        path: HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Apache Software Foundation\Procrun 2.0\Tomcat9\Parameters\Java
+        name: JvmMs
+        data: 1024
+
+    - name: Modifying JvmMx registry
+      win_regedit:
+        path: HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Apache Software Foundation\Procrun 2.0\Tomcat9\Parameters\Java
+        name: JvmMx
+        data: 2048
+
+    - name: Modifying JvmMx registry
+      win_regedit:
+        path: HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Apache Software Foundation\Procrun 2.0\Tomcat9\Parameters\Log
+        name: Level
+        data: Info
+    
+    - name: Add enviornment variable CATALINA_HOME
+      win_environment:
+       state: present
+       name: CATALINA_HOME
+       value: E:\opentext\tomcat9
+       level: machine
